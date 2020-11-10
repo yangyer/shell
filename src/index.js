@@ -51,10 +51,10 @@ const { registry, defaultFrontend } = loaderConfig
 
 const renderMicroFrontend = () => {
     console.log('Here ', window)
-    window[`${registry[defaultFrontend].name}Render`](
-        `${registry[defaultFrontend].target}`,
-        {}
-    )
+    // window[`${registry[defaultFrontend].name}Render`](
+    //     `${registry[defaultFrontend].target}`,
+    //     {}
+    // )
 }
 
 fetch(`${registry[defaultFrontend].data.url}`)
