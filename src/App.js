@@ -1,6 +1,8 @@
+import Microfrontend from './components/Microfrontend'
+
 function App() {
     return (
-        <h1>I'm from the shell</h1>
+        <Microfrontend />
     )
 }
 
