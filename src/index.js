@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import App from './App'
+import { CreateRxJsCommsLayer } from 'avail-microfe-base'
 
 // import Manifest from 'bookings/manifest.json'
 
@@ -25,8 +26,9 @@ const loaderConfig = {
         },
         navigation: {
             type: 'component', // built-in
+            name: 'navigation',
             data: {
-                url: 'string',
+                url: '/navigation/asset-manifest.json',
                 packageName: 'string',
             },
             target: 'navigation',
@@ -38,36 +40,48 @@ const loaderConfig = {
     routes: {
         '/zbookings': {
             moduleId: 'bookings',
+            iconUrl: '',
+            displayText: 'Bookings'
         },
     },
-    defaultFrontend: 'bookings',
+    defaultFrontend: ['bookings', 'navigation'],
 }
 
 // console.log(Manifest)
 
 // const v = require(loaderConfig.registry.bookings.data.url)
 
-const { registry, defaultFrontend } = loaderConfig
+const { routes, registry, defaultFrontend } = loaderConfig
 
-const renderMicroFrontend = () => {
-    console.log('Here ', window)
-    // window[`${registry[defaultFrontend].name}Render`](
-    //     `${registry[defaultFrontend].target}`,
-    //     {}
-    // )
+
+
+const renderMicroFrontend = (frontEnd, config) => () => {
+    const { __mfeRegistration } = window
+    const frontEndRegInfo = config[frontEnd]
+    if (__mfeRegistration) {
+        const frontEndRegObj = __mfeRegistration[`${frontEndRegInfo.name}Reg`]
+        frontEndRegObj
+            .init({}, `${frontEndRegInfo.target}`, { history: {} })
+            .registerLayer(CreateRxJsCommsLayer())
+            .then(() => console.log(`finish mounting '${frontEndRegInfo.name}'.`))
+    }
 }
 
-fetch(`${registry[defaultFrontend].data.url}`)
-    .then(res => res.json())
-    .then(manifest => {
-        const script = document.createElement('script')
-        script.id = defaultFrontend
-        script.crossOrigin = ''
-        script.type = 'text/javascript'
-        script.src = manifest.files['main.js']
-        console.log(manifest.files['main.js'])
-        script.onload = renderMicroFrontend
-        document.head.appendChild(script)
+defaultFrontend
+    .forEach(frontEnd => {
+        fetch(`${registry[frontEnd].data.url}`)
+            .then(res => res.json())
+            .then(manifest => {
+                console.log('manifest:', manifest)
+                const script = document.createElement('script')
+                script.id = `${frontEnd}-script`
+                script.crossOrigin = ''
+                script.type = 'text/javascript'
+                script.src = manifest.files['main.js']
+                console.log(manifest.files['main.js'])
+                script.onload = renderMicroFrontend(frontEnd, registry)
+                document.head.appendChild(script)
+            })
     })
 
 // /.then(manifest => {
@@ -85,5 +99,3 @@ ReactDOM.render(
     </React.StrictMode>,
     document.getElementById('navigation')
 )
-
-console.log('Here 1 ', window)
