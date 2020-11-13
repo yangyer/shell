@@ -1,5 +1,9 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { createShell } from 'avail-microfe-base'
+import { 
+    useHistory,
+    Redirect
+ } from 'react-router-dom'
 
 const loaderConfig = {
     template: 'index.html',
@@ -29,6 +33,15 @@ const loaderConfig = {
             },
             target: 'navigation',
         },
+        listing: {
+            type: 'url', // built-in
+            name: 'listing',
+            data: {
+                url: '/listing/asset-manifest.json',
+                packageName: 'string',
+            },
+            target: 'content',
+        },
         shellComponent: {
             type: 'composite',
         },
@@ -39,6 +52,14 @@ const loaderConfig = {
             iconUrl: '',
             displayText: 'Bookings'
         },
+        '/listing': {
+            moduleId: 'zlisting',
+            iconUrl: '',
+            displayText: 'Listing'
+        },
+        '/another-page': {
+            displayText: 'Another Page'
+        }
     },
     defaultFrontend: ['bookings', 'navigation'],
 }
@@ -69,9 +90,15 @@ const pubSub = () => {
 }
 
 const Microfrontend = ({}) => {
+    const history = useHistory()
     const comms = pubSub()
     const options = {
-        history: {},
+        history: history,
+        routes: Object.keys(loaderConfig.routes)
+            .map(key => ({
+                ...loaderConfig.routes[key],
+                path: key
+            })),
         subscribe: (messageType, callback) => {
             const wrapper = (payload) => {
                 console.info(`[microfrontend] recieving message '${JSON.stringify(payload, null, '\t')}`)
@@ -85,6 +112,15 @@ const Microfrontend = ({}) => {
         }
     }
     const shell = createShell(loaderConfig, console, options)
+    comms.subscribe('navigation', (msg) => {
+       if (!msg.moduleId) {
+           history.push(msg.path)
+       } else {
+           console.info(`[microfrontend] loading '${msg.moduleId}'`)
+           shell.loadModule(msg.moduleId)
+       }
+    })
+
     useEffect(() => {
         shell.init()
     },[])
